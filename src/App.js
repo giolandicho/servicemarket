@@ -1,23 +1,21 @@
-import logo from './logo.svg';
+import React, { useEffect } from "react";
+import Market from "./pages/Market.js";
+import { Router, Route, Routes } from "react-router-dom";
+import Header from "./components/Header.js";
+import AddService from "./pages/AddService.js"
+import axios from "axios";
+import Web3Modal from "web3modal";
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className="app">
+      
+        <Header/>
+        <Routes>
+        <Route path="/" element={<Market/>}/>
+        <Route path="/Add" element={<AddService/>}/>
+        </Routes>
     </div>
   );
 }
