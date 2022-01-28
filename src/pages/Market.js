@@ -22,8 +22,6 @@ import { Link } from "react-router-dom";
 
 
 
-const cards = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-
 const theme = createTheme();
 
 export default function Market() {
@@ -100,7 +98,7 @@ export default function Market() {
               Freelance Services
             </Typography>
             <Typography variant="h5" align="center" color="text.secondary" paragraph>
-              Do you have high demand skills? Offer your services as an NFT and get paid!
+              Do you have high demand skills? Offer your services, get paid and receive NFTs!
             </Typography>
             <Stack
               sx={{ pt: 4 }}

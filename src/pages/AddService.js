@@ -22,7 +22,7 @@ const client = ipfsHttpClient('https://ipfs.infura.io:5001/api/v0');
 
 const theme = createTheme();
 
-export default function SignUp() {
+export default function AddService() {
   const [created, setCreated] = useState(false);
   const [fileUrl, setFileUrl] = useState(null);
   const [formInput, setFormInput] = useState({ 
@@ -31,7 +31,7 @@ export default function SignUp() {
       duration: "", 
       price: ""});
 
-  const handleSubmit = async(event) => {
+  const onChange = async(event) => {
     event.preventDefault();
     const file = event.target.files[0];
     try {const added = await client.add(
@@ -42,11 +42,60 @@ export default function SignUp() {
     )
     const url = `https://ipfs.infura.io/ipfs/${added.path}`;
     setFileUrl(url)
-    setCreated(true);
     } catch(error){
         console.log("Error uploading file: ", error);
     }
   };
+  const createMarket = async() => {
+      const { title, description, duration, price } = formInput;
+      if( !title || !description || !duration || !price || !fileUrl) return
+        //upload to IPFS
+      const data = JSON.stringify({
+          title, description, image: fileUrl
+      })
+      try {
+        const added = await client.add(data);
+        const url = `https://ipfs.infura.io/ipfs/${added.path}`
+        createItem(url);
+      } catch(error){
+        console.log("Error uploading file: ", error);
+      }
+  }
+  const createItem = async(url) => {
+    const web3Modal = new Web3Modal();
+    const connection = await web3Modal.connect();
+    const provider = new ethers.providers.Web3Provider(connection);
+    const signer = provider.getSigner();
+
+    //Create Item
+    let contract = new ethers.Contract(serviceAddress, Service.abi, signer);
+    let transaction = await contract.createToken(url);
+    let tx = await transaction.wait();
+    let event = tx.events[0];
+    let value = event.args[2];
+    let tokenId = value.toNumber();
+    const price = ethers.utils.parseUnits(formInput.price, "ether");
+
+    //list item for sale on marketplace
+    contract = new ethers.Contract(marketAddress, ServiceMarket.abi, signer);
+    let listingPrice = await contract.getListingPrice();
+    listingPrice = listingPrice.toString();
+    console.log("here")
+
+    try {
+        transaction = await contract.createService(
+        serviceAddress,
+        tokenId,
+        price,
+        { value: listingPrice }
+    )
+    await transaction.wait();
+    }catch(error){
+        console.log(error);
+    }
+        console.log("all done bro")
+        setCreated(true);
+  }
 
   return (
     <ThemeProvider theme={theme}>
@@ -67,7 +116,7 @@ export default function SignUp() {
           <Typography component="h1" variant="h5">
             New Service
           </Typography>
-          <Box component="form" noValidate onSubmit={handleSubmit} sx={{ mt: 3 }}>
+          <Box component="form" noValidate onSubmit={createMarket} sx={{ mt: 3 }}>
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <TextField
@@ -75,6 +124,7 @@ export default function SignUp() {
                   fullWidth
                   label="Title"
                   autoFocus
+                  onChange={e => setFormInput({ ...formInput, title: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -82,6 +132,9 @@ export default function SignUp() {
                   required
                   fullWidth
                   label="Description"
+                  multiline
+                  rows={4}
+                  onChange={e => setFormInput({ ...formInput, description: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -89,6 +142,7 @@ export default function SignUp() {
                   required
                   fullWidth
                   label="Duration"
+                  onChange={e => setFormInput({ ...formInput, duration: e.target.value })}
                 />
               </Grid>
               <Grid item xs={12}>
@@ -96,7 +150,18 @@ export default function SignUp() {
                   required
                   fullWidth
                   label="Price"
+                  onChange={e => setFormInput({ ...formInput, price: e.target.value })}
                 />
+               <input
+                type="file"
+                name="Asset"
+                onChange={onChange}
+               /> 
+               {
+                   fileUrl && (
+                       <img width="350" src={fileUrl}/>
+                   )
+               }
               </Grid>
             </Grid>
             <Button
